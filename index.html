@@ -714,6 +714,206 @@ ul.tight li{margin-bottom:2px}
   <button type="button" class="kc-go" data-preset='{"tab":"vel","rows":[{"x":"0","p":"0,15"},{"x":"1","p":"0,40"},{"x":"2","p":"0,25"},{"x":"3","p":"0,12"},{"x":"4","p":"0,08"}],"a":"1","b":"0","c1":"1","c2":"2"}'>Spočítat v kalkulačce →</button>
   </div>
 
+  <style>
+.lab{background:var(--surface);border:2px solid var(--accent);border-radius:8px;padding:14px 16px;margin:18px 0}
+.lab h3{margin:2px 0 6px}
+.lab-pre{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.lab-pre button,.lab-sim button{font-family:var(--sans);font-size:13px;padding:5px 10px;border:1px solid var(--rule);border-radius:999px;background:var(--bg);color:var(--fg);cursor:pointer}
+.lab-pre button:hover,.lab-sim button:hover{border-color:var(--accent);color:var(--accent)}
+.lab button:focus-visible,.lab input:focus-visible,.lab select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.lab svg{width:100%;height:auto;display:block;touch-action:none;user-select:none}
+.lab .hit{fill:transparent;cursor:ns-resize}
+.lab .sband{fill:var(--accent);opacity:.12}
+.lab .exl{stroke:var(--accent);stroke-width:2.5}
+.lab .mdl{stroke:var(--fg);stroke-width:1.3;stroke-dasharray:5 4}
+.lab .xbl{stroke:var(--cont);stroke-width:2;stroke-dasharray:3 3}
+.lab .fulc{fill:var(--accent)}
+.lab .sdot{fill:var(--cont);stroke:var(--surface);stroke-width:1.5}
+.lab .sl,.lab .lbx,.lab .lbm,.lab .lbs{paint-order:stroke;stroke:var(--surface);stroke-width:4px;stroke-linejoin:round}
+.lab .cbar{fill:var(--warn);opacity:.55}
+.lab .lbx{fill:var(--accent);font-family:var(--sans);font-size:12px;font-weight:700}
+.lab .lbm{fill:var(--fg);font-family:var(--sans);font-size:11.5px}
+.lab .lbs{fill:var(--cont);font-family:var(--sans);font-size:11.5px;font-weight:600}
+.lab-sl{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:6px 0 4px}
+.lab-sl label{display:flex;flex-direction:column;gap:2px;font-family:var(--mono);font-size:12px;color:var(--muted);text-align:center}
+.lab-sl input{width:100%;accent-color:var(--disc)}
+.lab-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}
+.lab-tile{border:1px solid var(--rule-soft);border-radius:6px;padding:8px 10px;background:var(--bg);min-width:0}
+.lab-tile .k{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.lab-tile .v{font-family:var(--mono);font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
+.lab-tile .v.acc{color:var(--accent)}
+.lab-tile .f{font-size:12px;color:var(--muted);font-family:var(--serif);font-style:italic;overflow-wrap:anywhere}
+.lab-ab{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0}
+.lab-ab label{font-family:var(--mono);font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+.lab-ab input{accent-color:var(--accent)}
+.lab-box{border:1px dashed var(--rule);border-radius:6px;padding:8px 12px;margin:8px 0;font-size:14px}
+.lab-sim{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0}
+.lab-sim select{font-family:var(--mono);font-size:14px;padding:4px 6px;border:1px solid var(--rule);border-radius:4px;background:var(--bg);color:var(--fg)}
+.lab-try li{margin-bottom:3px;font-size:14.5px}
+@media (max-width:640px){.lab-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.lab-ab{grid-template-columns:1fr}}
+@media print{.lab{display:none!important}}
+</style>
+<div class="lab" id="lab">
+  <h3>Laboratoř: EX, rozptyl a průměr na vlastní oči</h3>
+  <p class="sub" style="margin:0">Táhni sloupce myší nebo prstem nahoru a dolů (nebo použij posuvníky). Pravděpodobnosti se vždy dopočítají do 1. Sleduj, jak se mění střední hodnota, medián a rozptyl.</p>
+  <div class="lab-pre" role="group" aria-label="Předvolby rozdělení">
+    <button type="button" data-pre="kava">Káva (příklad)</button>
+    <button type="button" data-pre="sym">Souměrné</button>
+    <button type="button" data-pre="jedna">Vše na jedné hodnotě</button>
+    <button type="button" data-pre="kraje">Jen kraje</button>
+    <button type="button" data-pre="rovn">Rovnoměrné</button>
+    <button type="button" data-pre="vlevo">Ocas doleva</button>
+  </div>
+  <div class="fig-scroll"><svg id="lab-chart" style="min-width:460px" viewBox="0 0 520 262" role="img" aria-label="Rozdělení pravděpodobnosti s vyznačenou střední hodnotou, mediánem a pásmem plus minus sigma"></svg></div>
+  <div class="lab-sl" id="lab-sl"></div>
+  <div class="lab-tiles" id="lab-tiles"></div>
+  <div class="kc-lbl">Odkud se bere rozptyl: příspěvky (x − EX)² · p(x)</div>
+  <div class="fig-scroll"><svg id="lab-contrib" style="min-width:460px" viewBox="0 0 520 130" role="img" aria-label="Příspěvky jednotlivých hodnot k rozptylu"></svg></div>
+  <p class="sub" style="margin:2px 0 10px">Rozptyl je součet těchto sloupců. Vzdálené hodnoty přispívají nejvíc, protože odchylka se umocňuje: hodnota 2× dál od EX přispěje 4× víc.</p>
+
+  <div class="kc-lbl">Lineární transformace Y = a·X + b</div>
+  <div class="lab-ab">
+    <label for="lab-a">a (násobení) = <strong id="lab-av">1</strong><input id="lab-a" type="range" min="-2" max="3" step="0.5" value="1"></label>
+    <label for="lab-b">b (posun) = <strong id="lab-bv">0</strong><input id="lab-b" type="range" min="-5" max="5" step="1" value="0"></label>
+  </div>
+  <div class="lab-box" id="lab-about"></div>
+
+  <div class="kc-lbl">Simulace: EX jako průměr mnoha pokusů</div>
+  <div class="lab-sim">
+    <label for="lab-n" style="font-size:14px">Počet pokusů</label>
+    <select id="lab-n"><option>10</option><option selected>100</option><option>1000</option><option>10000</option></select>
+    <button type="button" id="lab-run">Simulovat</button>
+    <button type="button" id="lab-clr">Smazat</button>
+  </div>
+  <div class="lab-box" id="lab-simout">Zatím nic nesimulováno. Klikni na <strong>Simulovat</strong>: kalkulačka „vylosuje“ zvolený počet hodnot podle rozdělení a spočítá jejich obyčejný průměr x̄. Oranžové tečky v grafu ukážou, jak často která hodnota padla.</div>
+
+  <div class="kc-lbl">Zkus si</div>
+  <ul class="lab-try">
+    <li>Klikni na <strong>Vše na jedné hodnotě</strong>: rozptyl je 0, protože nic nekolísá.</li>
+    <li>Klikni na <strong>Jen kraje</strong>: EX je uprostřed, ale rozptyl je největší možný. Uprostřed přitom nikdo není.</li>
+    <li>Táhni pravý sloupec nahoru: EX se posune doprava víc než medián (ocas táhne průměr).</li>
+    <li>Pohni posuvníkem <strong>b</strong>: celý graf se posune, EX taky, ale rozptyl ani σ se nezmění.</li>
+    <li>Nastav <strong>a = 2</strong>: EX se zdvojnásobí, σ taky, ale rozptyl se zčtyřnásobí (a²).</li>
+    <li>Simuluj 10 pokusů a pak 10 000: s více pokusy se průměr x̄ blíží EX.</li>
+  </ul>
+</div>
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const X0 = [0, 1, 2, 3, 4];
+  const PRE = { kava: [.15, .40, .25, .12, .08], sym: [.1, .2, .4, .2, .1], jedna: [0, 0, 1, 0, 0], kraje: [.5, 0, 0, 0, .5], rovn: [.2, .2, .2, .2, .2], vlevo: [.08, .12, .25, .40, .15] };
+  let p = PRE.kava.slice(), a = 1, b = 0, sample = null;
+  const NS = "http://www.w3.org/2000/svg";
+  const f = (v, d = 3) => (Math.abs(v) < 1e-12 ? 0 : v).toLocaleString("cs-CZ", { maximumFractionDigits: d });
+  function el(tag, attrs, txt){ const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (txt !== undefined) e.textContent = txt; return e; }
+  function setP(i, t){
+    t = Math.max(0, Math.min(1, t));
+    const rest = p.reduce((s, v, j) => j === i ? s : s + v, 0);
+    p = p.map((v, j) => j === i ? t : (rest > 1e-9 ? v / rest * (1 - t) : (1 - t) / (p.length - 1)));
+    sample = null; render();
+  }
+  function stats(){
+    const y = X0.map(x => a * x + b);
+    const EX = y.reduce((s, v, i) => s + v * p[i], 0);
+    const E2 = y.reduce((s, v, i) => s + v * v * p[i], 0);
+    const DX = Math.max(0, E2 - EX * EX), sg = Math.sqrt(DX);
+    const ord = y.map((v, i) => i).sort((i, j) => y[i] - y[j]);
+    let c = 0, med = y[ord[0]], medTo = null; for (let k = 0; k < ord.length; k++) { const i = ord[k]; c += p[i]; if (c >= 0.5 - 1e-9) { med = y[i]; if (Math.abs(c - 0.5) < 1e-9) { const nx = ord.slice(k + 1).find(j => p[j] > 1e-9); if (nx !== undefined) medTo = y[nx]; } break; } }
+    const mp = Math.max(...p); const mods = [...new Set(y.filter((v, i) => Math.abs(p[i] - mp) < 1e-9))].sort((u, v) => u - v);
+    const EX0 = X0.reduce((s, v, i) => s + v * p[i], 0), DX0 = Math.max(0, X0.reduce((s, v, i) => s + v * v * p[i], 0) - EX0 * EX0);
+    return { y, EX, E2, DX, sg, med, medTo, mods, EX0, DX0 };
+  }
+  function render(){
+    const S = stats(), y = S.y;
+    /* ---- hlavní graf ---- */
+    const svg = $("lab-chart"); svg.innerHTML = "";
+    const L = 50, R = 500, T = 34, B = 200;
+    let lo = Math.min(...y), hi = Math.max(...y); if (hi - lo < 1e-9) { lo -= 2; hi += 2; }
+    const pad = (hi - lo) * 0.12; lo -= pad; hi += pad;
+    const X = v => L + (v - lo) / (hi - lo) * (R - L);
+    const top = Math.max(0.5, Math.ceil(Math.max(...p) * 10) / 10), Y = v => B - v / top * (B - T);
+    const bw = Math.max(10, Math.min(40, Math.abs(X(y[1]) - X(y[0])) * 0.6 || 40));
+    for (let g = 0.1; g <= top + 1e-9; g += 0.1) { svg.append(el("line", { class: "grid", x1: L, y1: Y(g), x2: R, y2: Y(g) })); }
+    svg.append(el("text", { class: "tm", x: L - 6, y: Y(top) + 4, "text-anchor": "end" }, f(top, 1)));
+    svg.append(el("text", { class: "tm", x: L - 6, y: B + 4, "text-anchor": "end" }, "0"));
+    const bl = Math.max(L, X(S.EX - S.sg)), br = Math.min(R, X(S.EX + S.sg));
+    if (br > bl) svg.append(el("rect", { class: "sband", x: bl, y: T - 6, width: br - bl, height: B - T + 6 }));
+    y.forEach((v, i) => {
+      svg.append(el("rect", { class: "bar", x: X(v) - bw / 2, y: Y(p[i]), width: bw, height: B - Y(p[i]) }));
+      svg.append(el("text", { class: "sl", x: X(v), y: Y(p[i]) - 6, "text-anchor": "middle" }, f(p[i], 2)));
+      svg.append(el("text", { class: "tm", x: X(v), y: B + 16, "text-anchor": "middle" }, f(v, 2)));
+      if (sample) { const fr = sample.cnt[i] / sample.n; svg.append(el("circle", { class: "sdot", cx: X(v), cy: Y(Math.min(fr, top)), r: 5 })); }
+    });
+    svg.append(el("line", { class: "ax", x1: L, y1: B, x2: R, y2: B }));
+    svg.append(el("line", { class: "ax", x1: L, y1: T - 8, x2: L, y2: B }));
+    svg.append(el("line", { class: "mdl", x1: X(S.med), y1: T - 4, x2: X(S.med), y2: B }));
+    svg.append(el("line", { class: "exl", x1: X(S.EX), y1: T - 10, x2: X(S.EX), y2: B }));
+    svg.append(el("polygon", { class: "fulc", points: `${X(S.EX)},${B + 2} ${X(S.EX) - 9},${B + 30} ${X(S.EX) + 9},${B + 30}` }));
+    const right = X(S.EX) > X(S.med) || (Math.abs(X(S.EX) - X(S.med)) < 2 && X(S.EX) < (L + R) / 2);
+    svg.append(el("text", { class: "lbx", x: X(S.EX) + (right ? 6 : -6), y: T - 14, "text-anchor": right ? "start" : "end" }, "EX = " + f(S.EX)));
+    svg.append(el("text", { class: "lbm", x: X(S.med) + (right ? -6 : 6), y: T - 14, "text-anchor": right ? "end" : "start" }, "medián = " + f(S.med, 2)));
+    if (br > bl) svg.append(el("text", { class: "lbx", x: bl + 5, y: T + 8 }, "EX ± σ"));
+    svg.append(el("text", { class: "tm", x: X(S.EX), y: B + 46, "text-anchor": "middle" }, "těžiště"));
+    if (sample) { svg.append(el("line", { class: "xbl", x1: X(sample.mean), y1: T, x2: X(sample.mean), y2: B })); svg.append(el("text", { class: "lbs", x: R, y: 14, "text-anchor": "end" }, "průměr pokusů x̄ = " + f(sample.mean))); }
+    y.forEach((v, i) => { const h = el("rect", { class: "hit", x: X(v) - Math.max(bw, 30) / 2, y: T - 10, width: Math.max(bw, 30), height: B - T + 10 }); h.dataset.i = i; svg.append(h); });
+    /* ---- posuvníky ---- */
+    const sl = $("lab-sl");
+    if (!sl.children.length) X0.forEach((x, i) => { const lb = document.createElement("label"); lb.htmlFor = "lab-s" + i; lb.innerHTML = `<span id="lab-sv${i}"></span><input id="lab-s${i}" type="range" min="0" max="100" step="1">`; sl.append(lb); lb.querySelector("input").addEventListener("input", e => setP(i, e.target.value / 100)); });
+    X0.forEach((x, i) => { $("lab-s" + i).value = Math.round(p[i] * 100); $("lab-sv" + i).textContent = `p(${f(y[i], 2)}) = ${f(p[i], 2)}`; });
+    /* ---- dlaždice ---- */
+    const terms = y.map((v, i) => `${f(v, 2)}·${f(p[i], 2)}`).join(" + ");
+    const vx = Math.abs(S.EX) > 1e-9 ? f(S.sg / S.EX * 100, 1) + " %" : "nedef. (EX = 0)";
+    $("lab-tiles").innerHTML =
+      `<div class="lab-tile"><div class="k">Střední hodnota EX</div><div class="v acc">${f(S.EX)}</div><div class="f">Σ x·p = ${terms}</div></div>` +
+      `<div class="lab-tile"><div class="k">Medián</div><div class="v">${f(S.med, 2)}</div><div class="f">${S.medTo !== null ? "F(x) je přesně 0,5, medián není jednoznačný: vyhovuje cokoli mezi " + f(S.med, 2) + " a " + f(S.medTo, 2) + "; bere se první hodnota" : "první hodnota, kde F(x) ≥ 0,5"}</div></div>` +
+      `<div class="lab-tile"><div class="k">Modus</div><div class="v">${S.mods.map(m => f(m, 2)).join(", ")}</div><div class="f">nejvyšší sloupec</div></div>` +
+      `<div class="lab-tile"><div class="k">Rozptyl DX</div><div class="v">${f(S.DX)}</div><div class="f">E(X²) − (EX)² = ${f(S.E2)} − ${f(S.EX)}²</div></div>` +
+      `<div class="lab-tile"><div class="k">Směrodatná odchylka σ</div><div class="v">${f(S.sg)}</div><div class="f">√DX, šířka zeleného pásma na každou stranu</div></div>` +
+      `<div class="lab-tile"><div class="k">Variační koef. VX</div><div class="v">${vx}</div><div class="f">σ / EX</div></div>`;
+    /* ---- příspěvky k rozptylu ---- */
+    const cs = $("lab-contrib"); cs.innerHTML = "";
+    const con = y.map((v, i) => (v - S.EX) ** 2 * p[i]), cmax = Math.max(...con, 1e-9), CB = 98, CT = 34;
+    cs.append(el("line", { class: "ax", x1: L, y1: CB, x2: R, y2: CB }));
+    y.forEach((v, i) => {
+      const h = con[i] / cmax * (CB - CT);
+      cs.append(el("rect", { class: "cbar", x: X(v) - bw / 2, y: CB - h, width: bw, height: h }));
+      cs.append(el("text", { class: "sl", x: X(v), y: CB - h - 5, "text-anchor": "middle", style: "fill:var(--warn)" }, f(con[i])));
+      cs.append(el("text", { class: "tm", x: X(v), y: CB + 15, "text-anchor": "middle" }, f(v, 2)));
+    });
+    cs.append(el("line", { class: "exl", x1: X(S.EX), y1: CT - 6, x2: X(S.EX), y2: CB }));
+    cs.append(el("text", { class: "lbm", x: R, y: 12, "text-anchor": "end" }, "součet = DX = " + f(S.DX)));
+    /* ---- a, b ---- */
+    $("lab-av").textContent = f(a, 1); $("lab-bv").textContent = f(b, 0);
+    $("lab-about").innerHTML = (a === 1 && b === 0)
+      ? "Teď je Y = X. Pohni posuvníky a sleduj, co se stane s EX a DX."
+      : `Původní X: EX = ${f(S.EX0)}, DX = ${f(S.DX0)}.<br><strong>EY = a·EX + b</strong> = ${f(a, 1)} · ${f(S.EX0)} + ${f(b, 0)} = <strong>${f(S.EX)}</strong><br><strong>DY = a²·DX</strong> = ${f(a * a, 2)} · ${f(S.DX0)} = <strong>${f(S.DX)}</strong>${b !== 0 ? " &nbsp;(posun b rozptyl nemění)" : ""}<br>σ<sub>Y</sub> = |a|·σ = ${f(Math.abs(a), 1)} · ${f(Math.sqrt(S.DX0))} = ${f(S.sg)}`;
+    /* ---- simulace ---- */
+    if (sample) {
+      const d = sample.mean - S.EX;
+      $("lab-simout").innerHTML = `${sample.n.toLocaleString("cs-CZ")} pokusů: průměr x̄ = <strong>${f(sample.mean)}</strong> (EX = ${f(S.EX)}, rozdíl ${f(d)}). Průměrná čtvercová odchylka vzorku = ${f(sample.v)} (DX = ${f(S.DX)}).<br>Oranžové tečky = jak často která hodnota padla. Čím víc pokusů, tím blíž jsou tečky vrcholům sloupců a x̄ hodnotě EX.`;
+    } else if (!$("lab-simout").dataset.init) { $("lab-simout").dataset.init = "1"; }
+    else $("lab-simout").innerHTML = "Rozdělení se změnilo, simulace se smazala. Klikni znovu na <strong>Simulovat</strong>.";
+  }
+  /* tažení sloupců */
+  const svg = $("lab-chart"); let drag = null;
+  function pt(e){ const m = svg.getScreenCTM(); if (!m) return null; const q = svg.createSVGPoint(); q.x = e.clientX; q.y = e.clientY; return q.matrixTransform(m.inverse()); }
+  function apply(e){ const q = pt(e); if (!q) return; const top = Math.max(0.5, Math.ceil(Math.max(...p) * 10) / 10); setP(drag, (200 - q.y) / (200 - 34) * top); }
+  svg.addEventListener("pointerdown", e => { const t = e.target; if (!t.classList || !t.classList.contains("hit")) return; drag = +t.dataset.i; svg.setPointerCapture(e.pointerId); apply(e); e.preventDefault(); });
+  svg.addEventListener("pointermove", e => { if (drag !== null) apply(e); });
+  ["pointerup", "pointercancel"].forEach(ev => svg.addEventListener(ev, () => { drag = null; }));
+  document.querySelectorAll("#lab [data-pre]").forEach(bt => bt.addEventListener("click", () => { p = PRE[bt.dataset.pre].slice(); sample = null; render(); }));
+  $("lab-a").addEventListener("input", e => { a = +e.target.value; sample = null; render(); });
+  $("lab-b").addEventListener("input", e => { b = +e.target.value; sample = null; render(); });
+  $("lab-run").addEventListener("click", () => {
+    const n = +$("lab-n").value, cnt = [0, 0, 0, 0, 0], y = X0.map(x => a * x + b); let s = 0, s2 = 0;
+    for (let k = 0; k < n; k++) { let r = Math.random(), i = 0; while (i < 4 && r >= p[i]) { r -= p[i]; i++; } cnt[i]++; s += y[i]; s2 += y[i] * y[i]; }
+    const mean = s / n; sample = { n, cnt, mean, v: Math.max(0, s2 / n - mean * mean) }; render();
+  });
+  $("lab-clr").addEventListener("click", () => { sample = null; $("lab-simout").innerHTML = "Simulace smazána."; render(); $("lab-simout").innerHTML = "Simulace smazána."; });
+  render();
+})();
+</script>
+
   <div class="table-scroll"><table>
     <tr><th>Charakteristika</th><th>Definice / vzorec</th><th>K čemu</th></tr>
     <tr><td>Střední hodnota <span class="m">EX</span></td><td>viz tabulka v 05</td><td>průměrná hodnota</td></tr>
